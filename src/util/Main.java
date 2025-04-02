@@ -3,10 +3,7 @@ package util;
 import model.Space;
 import model.Tabuleiro;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,17 +19,33 @@ public class Main {
 
     static Tabuleiro tabuleiro;
 
-    public final static  int TABULEIRO_LIMIT = 9 ;
+    public final static int TABULEIRO_LIMIT = 9;
 
     public static void main(String[] args) {
-        final Map<String, String> positions = Stream.of(args)
-                .filter(arg -> arg.contains(";")) // Filtra strings que contêm ";"
-                .collect(Collectors.toMap(
-                        k -> k.split(";")[0], // Chave: primeira parte da string
-                        v -> v.split(";")[1] // Valor: segunda parte da string
-                ));
+        // Converte os argumentos para o formato esperado
+        Map<String, String> positions = new HashMap<>();
+        for (String arg : args) {
+            if (arg.contains(";")) {
+                String[] parts = arg.split(";");
+                if (parts.length == 2) {
+                    positions.put(parts[0], parts[1]);
+                }
+            }
+        }
 
-        var option = - 1;
+        // Adiciona verificação para garantir que todas as posições estão presentes
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                String key = i + "," + j;
+                if (!positions.containsKey(key)) {
+                    // Define um valor padrão para posições não fornecidas
+                    positions.put(key, "null,false");
+                }
+            }
+        }
+
+        var option = -1;
+
 
         while (true) {
             System.out.println("Selecione uma das opções a seguir");
@@ -60,14 +73,15 @@ public class Main {
                 default -> System.out.println("Opção inválida, selecione uma das opções do menu");
             }
         }
+
     }
 
     private static void finishGame() {
-        if(isNull(tabuleiro)) {
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo ainda não foi iniciado");
             return;
         }
-        if(tabuleiro.gameFinish()){
+        if (tabuleiro.gameFinish()) {
             System.out.println("Parabéns você conseguiu concluir ");
             showCurrentGame();
             tabuleiro = null;
@@ -79,39 +93,39 @@ public class Main {
     }
 
     private static void clearGame() {
-        if(isNull(tabuleiro)) {
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo ainda não foi iniciado");
             return;
         }
 
         System.out.println("Deseja continuar ? Caso sim perdera o progresso do jogo");
         var confirm = scanner.next();
-        while (!confirm.equalsIgnoreCase("sim") && !confirm.equalsIgnoreCase("não")){
+        while (!confirm.equalsIgnoreCase("sim") && !confirm.equalsIgnoreCase("não")) {
             System.out.println("Por favor digite sim ou não");
             confirm = scanner.next();
         }
 
-        if(confirm.equalsIgnoreCase("sim")){
+        if (confirm.equalsIgnoreCase("sim")) {
             tabuleiro.reset();
         }
     }
 
     private static void showGameStatus() {
-        if(isNull(tabuleiro)) {
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo ainda não foi iniciado");
             return;
         }
-        System.out.printf("Status de jogo %s\n",tabuleiro.getStatus().getLabel() );
-        if(tabuleiro.hasErrors()){
+        System.out.printf("Status de jogo %s\n", tabuleiro.getStatus().getLabel());
+        if (tabuleiro.hasErrors()) {
             System.out.println("O jogo contém erros");
-        }else{
+        } else {
             System.out.println("O jogo não contém erros");
         }
     }
 
     private static void showCurrentGame() {
 
-        if(isNull(tabuleiro)) {
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo ainda não foi iniciado");
             return;
         }
@@ -120,18 +134,18 @@ public class Main {
         var argsPos = 0;
 
 
-        for(int i = 0; i <TABULEIRO_LIMIT; i++) {
-            for(var col : tabuleiro.getSpaces()){
-                args[argsPos ++] = " " + (isNull(col.get(i).getAtual()) ? " " : col.get(i).getAtual());
+        for (int i = 0; i < TABULEIRO_LIMIT; i++) {
+            for (var col : tabuleiro.getSpaces()) {
+                args[argsPos++] = " " + (isNull(col.get(i).getAtual()) ? " " : col.get(i).getAtual());
             }
         }
         System.out.println("Seu jogo se encontra da seguinte forma");
-        System.out.printf((BOARD_TEMPLATE) + "\n",   args);
+        System.out.printf((BOARD_TEMPLATE) + "\n", args);
     }
 
 
     private static void removeNumber() {
-        if (isNull(tabuleiro)){
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo ainda não foi iniciado iniciado");
             return;
         }
@@ -140,58 +154,56 @@ public class Main {
         var col = runUntilGetValidNumber(0, 8);
         System.out.println("Informe a linha que em que o número será inserido");
         var row = runUntilGetValidNumber(0, 8);
-        if (!tabuleiro.clearValue(col, row)){
+        if (!tabuleiro.clearValue(col, row)) {
             System.out.printf("A posição [%s,%s] tem um valor fixo\n", col, row);
         }
     }
 
     private static void inputNumber() {
-        if(isNull(tabuleiro)) {
+        if (isNull(tabuleiro)) {
             System.out.println("O jogo não foi iniciado");
             return;
 
         }
 
         System.out.println("Insira a coluna que o número será inserido: ");
-        int col = runUntilGetValidNumber(0,8);
+        int col = runUntilGetValidNumber(0, 8);
         System.out.println("Insira a linha que o número será inserido: ");
-        int row = runUntilGetValidNumber(0,8);
-        System.out.printf("Informe o número que vai entrar na posição %s %s \n", col,row);
-        int value = runUntilGetValidNumber(1,9);
+        int row = runUntilGetValidNumber(0, 8);
+        System.out.printf("Informe o número que vai entrar na posição %s %s \n", col, row);
+        int value = runUntilGetValidNumber(1, 9);
 
-        if(!tabuleiro.mudarValor(col, row, value)) {
-            System.out.printf("Posição %s %s tem um valor fixo\n", col,row);
+        if (!tabuleiro.mudarValor(col, row, value)) {
+            System.out.printf("Posição %s %s tem um valor fixo\n", col, row);
         }
 
     }
 
     private static void startGame(Map<String, String> positions) {
-        if(nonNull(tabuleiro)) {
+        if (nonNull(tabuleiro)) {
             System.out.println("O jogo já foi iniciado");
             return;
 
         }
 
 
-
-
         List<List<Space>> spaces = new ArrayList<>();
-        for(int i = 0 ; i < TABULEIRO_LIMIT; i++) {
+        for (int i = 0; i < TABULEIRO_LIMIT; i++) {
             spaces.add(new ArrayList<>());
-            for (int j = 0 ; j < TABULEIRO_LIMIT; j++) {
+            for (int j = 0; j < TABULEIRO_LIMIT; j++) {
 
-                var positionConfig = positions.get("%s%s".formatted(i,j));
+                var positionConfig = positions.get("%s%s".formatted(i, j));
 
-                if(positionConfig == null) {
+                if (positionConfig == null) {
                     throw new IllegalArgumentException("Configuração da posição %s%s não encontrada"
-                            .formatted(i,j));
+                            .formatted(i, j));
                 }
 
-                String [] configParts = positionConfig.split(",");
+                String[] configParts = positionConfig.split(",");
 
                 var expected = Integer.parseInt(configParts[0]);
                 var fixed = Boolean.parseBoolean(configParts[1]);
-                var currentSpace = new Space(expected,fixed);
+                var currentSpace = new Space(expected, fixed);
                 spaces.get(i).add(currentSpace);
 
             }
@@ -199,14 +211,16 @@ public class Main {
         tabuleiro = new Tabuleiro(spaces);
         System.out.println("O jogo vai começar ");
 
+
     }
 
-    private static int runUntilGetValidNumber(final int min, final int max){
+    private static int runUntilGetValidNumber(final int min, final int max) {
         var current = scanner.nextInt();
-        while (current < min || current > max){
+        while (current < min || current > max) {
             System.out.printf("Informe um número entre %s e %s\n", min, max);
             current = scanner.nextInt();
         }
         return current;
     }
+
 }

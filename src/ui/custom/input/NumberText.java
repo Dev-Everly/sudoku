@@ -5,12 +5,14 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import model.Space;
+import service.EventEnum;
+import service.EventListener;
 
 import java.awt.*;
 
 import static java.awt.Font.PLAIN;
 
-public class NumberText extends JTextField {
+public class NumberText extends JTextField implements EventListener {
 
     private final Space space;
 
@@ -60,4 +62,10 @@ public class NumberText extends JTextField {
 
     }
 
+    @Override
+    public void update(EventEnum eventEnum) {
+        if(eventEnum.equals(EventEnum.CLEAR_SPACE) && this.isEnabled()){
+            this.setText("");
+        }
+    }
 }

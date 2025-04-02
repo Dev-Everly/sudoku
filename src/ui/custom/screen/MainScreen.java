@@ -1,18 +1,25 @@
 package ui.custom.screen;
-
-import model.GameStatusEnum;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import javax.swing.JPanel;
+import model.Space;
+import service.EventEnum;
+import service.NotifierService;
 import service.TabuleiroService;
 import ui.custom.button.ButtonCheckGameStatus;
 import ui.custom.button.ButtonReset;
 import ui.custom.button.FinishGameButton;
 import ui.custom.frame.MainFrame;
+import ui.custom.input.NumberText;
 import ui.custom.panel.MainPanel;
+import ui.custom.panel.SudokuSector;
 
 import javax.swing.*;
 import java.awt.*;
+
 import java.util.Map;
 
-import static model.GameStatusEnum.NON_STARTED;
 
 public class MainScreen {
 
@@ -22,16 +29,58 @@ public class MainScreen {
 
     public MainScreen (final Map<String,String> gameConfig) {
         this.tabuleiroService = new TabuleiroService(gameConfig);
+        this.notifierService = new NotifierService();
     }
 
     public void buildMainScreen() {
         JPanel mainPanel = new MainPanel(dimension);
         JFrame mainFrame = new MainFrame(dimension,mainPanel);
+        // Para cada setor 3x3 do Sudoku
+        for (int sectorRow = 0; sectorRow < 3; sectorRow++) {
+            for (int sectorCol = 0; sectorCol < 3; sectorCol++) {
+                // Calcula os limites do setor
+                int initRow = sectorRow * 3;
+                int endRow = initRow + 3;
+                int initCol = sectorCol * 3;
+                int endCol = initCol + 3;
+
+                // Obtém os espaços do setor atual
+                List<Space> sectorSpaces = getSpaces(tabuleiroService.getSpaces(), initCol, endCol, initRow, endRow);
+
+                // Adiciona o setor ao painel principal
+                mainPanel.add(generateSection(sectorSpaces));
+            }
+        }
+
         addResetButton(mainPanel);
         addShowGameStatus(mainPanel);
         addFinishGame(mainPanel);
         mainFrame.revalidate();
         mainFrame.repaint();
+    }
+
+    private List<Space> getSpaces(List<List<Space>> spaces,
+                                  final int initCol, final int endCol,
+                                  final int initRow, final int endRow) {
+        List<Space> spaceSector = new ArrayList<>();
+        for (int r = initRow; r < endRow; r++) {
+            for (int c = initCol; c < endCol; c++) {
+                spaceSector.add(spaces.get(r).get(c)); // Acesso correto: linha primeiro
+            }
+        }
+        return spaceSector;
+    }
+
+    private JPanel generateSection(final List<Space> spaces) {
+        if (spaces == null) {
+            throw new IllegalArgumentException("Lista de espaços não pode ser nula");
+        }
+
+        List<NumberText> campos = spaces.stream()
+                .map(NumberText::new)
+                .collect(Collectors.toList());
+                campos.forEach(t -> notifierService.subEscrever(EventEnum.CLEAR_SPACE,t));
+        return new SudokuSector(campos);
     }
 
     private void addFinishGame(JPanel mainPanel) {
@@ -80,11 +129,13 @@ public class MainScreen {
             );
             if(dialogResult == 0) {
                 tabuleiroService.reset();
+                notifierService.notify(EventEnum.CLEAR_SPACE);
             }
         });
         mainPanel.add(buttonReset);
     }
 
+    private final NotifierService notifierService;
     private JButton finishGameButton;
     private JButton buttonCheckGameStatus;
     private JButton buttonReset;
